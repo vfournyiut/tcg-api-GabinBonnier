@@ -1,10 +1,14 @@
 import {NextFunction, Request, Response} from 'express'
 import jwt from 'jsonwebtoken'
+import {env} from '../env'
 
 declare global {
     namespace Express {
         interface Request {
-            userId?: number
+            user?: {
+                userId: number
+                email: string
+            }
         }
     }
 }
@@ -15,14 +19,14 @@ export const authenticateToken = (
     next: NextFunction,
 ) => {
     const authHeader = req.headers.authorization
-    const token = authHeader && authHeader.split(' ')[1] // Format: "Bearer TOKEN"
+    const token = authHeader && authHeader.split(' ')[1] 
 
     if (!token) {
       return res.status(401).json({error: 'Token manquant'})
     }
 
     try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+    const decoded = jwt.verify(token, env.JWT_SECRET) as {
         userId: number
         email: string
     }

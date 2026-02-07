@@ -3,6 +3,8 @@ import {env} from "./env";
 import express from "express";
 import cors from "cors";
 import { authRouter } from "./auth/auth.routes";
+import cardsRoutes from './api/cards/cards.routes';
+import decksRoutes from './api/decks/decks.routes';
 
 // Create Express app
 export const app = express();
@@ -27,6 +29,8 @@ app.get("/api/health", (_req, res) => {
 
 // Routes
 app.use("/api/auth", authRouter);
+app.use("/api/cards", cardsRoutes);
+app.use("/api/decks", decksRoutes);
 
 // Start server only if this file is run directly (not imported for tests)
 if (require.main === module) {

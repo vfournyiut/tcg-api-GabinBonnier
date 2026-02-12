@@ -6,6 +6,23 @@ const router = Router()
 
 router.use(authenticateToken)
 
+/**
+ * Crée un nouveau deck de cartes pour l'utilisateur authentifié
+ * 
+ * @route POST /api/decks
+ * @access Protected - Nécessite authentification JWT
+ * @param {Request} req - Requête Express
+ * @param {string} req.body.name - Nom du deck
+ * @param {number[]} req.body.cards - Tableau de 10 IDs de cartes
+ * @param {Response} res - Réponse Express
+ * @returns {Promise<Response>} 201 - Deck créé avec succès, retourne le deck avec ses cartes
+ * @returns {Promise<Response>} 400 - Données invalides (nom manquant, pas 10 cartes, cartes invalides)
+ * @returns {Promise<Response>} 500 - Erreur serveur
+ * @throws {Error} Le nom du deck est requis
+ * @throws {Error} Les cartes doivent être un tableau
+ * @throws {Error} Un deck doit contenir exactement 10 cartes
+ * @throws {Error} Une ou plusieurs cartes sont invalides
+ */
 router.post('/', async (req: Request, res: Response) => {
     const {name, cards} = req.body
 
@@ -58,6 +75,17 @@ router.post('/', async (req: Request, res: Response) => {
     }
 })
 
+/**
+ * Récupère tous les decks de l'utilisateur authentifié
+ * 
+ * @route GET /api/decks/mine
+ * @access Protected - Nécessite authentification JWT
+ * @param {Request} req - Requête Express
+ * @param {Response} res - Réponse Express
+ * @returns {Promise<Response>} 200 - Liste de tous les decks de l'utilisateur avec leurs cartes, triés par date de création (plus récent en premier)
+ * @returns {Promise<Response>} 500 - Erreur serveur
+ * @throws {Error} Erreur lors de la récupération des decks depuis la base de données
+ */
 router.get('/mine', async (req: Request, res: Response) => {
     try {
         const decks = await prisma.deck.findMany({
@@ -83,6 +111,21 @@ router.get('/mine', async (req: Request, res: Response) => {
     }
 })
 
+/**
+ * Récupère un deck spécifique par son ID
+ * 
+ * @route GET /api/decks/:id
+ * @access Protected - Nécessite authentification JWT
+ * @param {Request} req - Requête Express
+ * @param {string} req.params.id - ID du deck à récupérer
+ * @param {Response} res - Réponse Express
+ * @returns {Promise<Response>} 200 - Deck trouvé avec ses cartes
+ * @returns {Promise<Response>} 403 - Accès non autorisé (le deck n'appartient pas à l'utilisateur)
+ * @returns {Promise<Response>} 404 - Deck non trouvé
+ * @returns {Promise<Response>} 500 - Erreur serveur
+ * @throws {Error} Deck non trouvé
+ * @throws {Error} Accès non autorisé à ce deck
+ */
 router.get('/:id', async (req: Request, res: Response) => {
     const {id} = req.params
 
@@ -115,6 +158,27 @@ router.get('/:id', async (req: Request, res: Response) => {
     }
 })
 
+/**
+ * Modifie un deck existant (nom et/ou cartes)
+ * 
+ * @route PATCH /api/decks/:id
+ * @access Protected - Nécessite authentification JWT
+ * @param {Request} req - Requête Express
+ * @param {string} req.params.id - ID du deck à modifier
+ * @param {string} [req.body.name] - Nouveau nom du deck (optionnel)
+ * @param {number[]} [req.body.cards] - Nouveau tableau de 10 IDs de cartes (optionnel)
+ * @param {Response} res - Réponse Express
+ * @returns {Promise<Response>} 200 - Deck modifié avec succès
+ * @returns {Promise<Response>} 400 - Données invalides (pas 10 cartes, cartes invalides)
+ * @returns {Promise<Response>} 403 - Accès non autorisé (le deck n'appartient pas à l'utilisateur)
+ * @returns {Promise<Response>} 404 - Deck non trouvé
+ * @returns {Promise<Response>} 500 - Erreur serveur
+ * @throws {Error} Deck non trouvé
+ * @throws {Error} Accès non autorisé à ce deck
+ * @throws {Error} Les cartes doivent être un tableau
+ * @throws {Error} Un deck doit contenir exactement 10 cartes
+ * @throws {Error} Une ou plusieurs cartes sont invalides
+ */
 router.patch('/:id', async (req: Request, res: Response) => {
     const {id} = req.params
     const {name, cards} = req.body
@@ -190,6 +254,21 @@ router.patch('/:id', async (req: Request, res: Response) => {
     }
 })
 
+/**
+ * Supprime un deck existant
+ * 
+ * @route DELETE /api/decks/:id
+ * @access Protected - Nécessite authentification JWT
+ * @param {Request} req - Requête Express
+ * @param {string} req.params.id - ID du deck à supprimer
+ * @param {Response} res - Réponse Express
+ * @returns {Promise<Response>} 200 - Deck supprimé avec succès
+ * @returns {Promise<Response>} 403 - Accès non autorisé (le deck n'appartient pas à l'utilisateur)
+ * @returns {Promise<Response>} 404 - Deck non trouvé
+ * @returns {Promise<Response>} 500 - Erreur serveur
+ * @throws {Error} Deck non trouvé
+ * @throws {Error} Accès non autorisé à ce deck
+ */
 router.delete('/:id', async (req: Request, res: Response) => {
     const {id} = req.params
 

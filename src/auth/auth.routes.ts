@@ -6,6 +6,21 @@ import {env} from "../env";
 
 export const authRouter = Router()
 
+/**
+ * Route d'inscription d'un nouvel utilisateur
+ * 
+ * @route POST /api/auth/sign-up
+ * @param {Request} req - Requête Express contenant les données de l'utilisateur
+ * @param {string} req.body.email - Email de l'utilisateur
+ * @param {string} req.body.username - Nom d'utilisateur
+ * @param {string} req.body.password - Mot de passe en clair
+ * @param {Response} res - Réponse Express
+ * @returns {Promise<Response>} 201 - Utilisateur créé avec succès, retourne le token JWT et les infos utilisateur
+ * @returns {Promise<Response>} 400 - Données manquantes dans la requête
+ * @returns {Promise<Response>} 409 - Email déjà utilisé
+ * @returns {Promise<Response>} 500 - Erreur serveur
+ * @throws {Error} Erreur lors du hachage du mot de passe ou de la création de l'utilisateur
+ */
 authRouter.post('/sign-up', async (req: Request, res: Response) => {
     const {email, username, password} = req.body
 
@@ -55,6 +70,20 @@ authRouter.post('/sign-up', async (req: Request, res: Response) => {
     }
 })
 
+/**
+ * Route de connexion d'un utilisateur existant
+ * 
+ * @route POST /api/auth/sign-in
+ * @param {Request} req - Requête Express contenant les identifiants
+ * @param {string} req.body.email - Email de l'utilisateur
+ * @param {string} req.body.password - Mot de passe en clair
+ * @param {Response} res - Réponse Express
+ * @returns {Promise<Response>} 200 - Connexion réussie, retourne le token JWT et les infos utilisateur
+ * @returns {Promise<Response>} 400 - Données manquantes dans la requête
+ * @returns {Promise<Response>} 401 - Email ou mot de passe incorrect
+ * @returns {Promise<Response>} 500 - Erreur serveur
+ * @throws {Error} Erreur lors de la vérification du mot de passe ou de la génération du token
+ */
 authRouter.post('/sign-in', async (req: Request, res: Response) => {
     const {email, password} = req.body
 

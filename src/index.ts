@@ -1,3 +1,12 @@
+/**
+ * Point d'entrée principal de l'application API TCG (Trading Card Game)
+ * 
+ * Configure et démarre le serveur Express avec toutes les routes et middlewares nécessaires.
+ * Gère l'authentification, les cartes Pokémon et la gestion des decks.
+ * 
+ * @module index
+ */
+
 import {createServer} from "http";
 import {env} from "./env";
 import express from "express";
@@ -6,10 +15,18 @@ import { authRouter } from "./auth/auth.routes";
 import cardsRoutes from './api/cards/cards.routes';
 import decksRoutes from './api/decks/decks.routes';
 
-// Create Express app
+/**
+ * Instance de l'application Express
+ * @type {express.Application}
+ */
 export const app = express();
 
-// Middlewares
+/**
+ * Configuration des middlewares
+ * - CORS : Autorise toutes les origines avec credentials
+ * - JSON : Parse automatiquement les corps de requête JSON
+ * - Static : Sert les fichiers statiques depuis le dossier public
+ */
 app.use(
     cors({
         origin: true,  // Autorise toutes les origines
@@ -22,12 +39,22 @@ app.use(express.json());
 // Serve static files (Socket.io test client)
 app.use(express.static('public'));
 
-// Health check endpoint
+/**
+ * Route de vérification de santé du serveur
+ * 
+ * @route GET /api/health
+ * @returns {Object} Statut du serveur
+ */
 app.get("/api/health", (_req, res) => {
     res.json({status: "ok", message: "TCG Backend Server is running"});
 });
 
-// Routes
+/**
+ * Configuration des routes de l'API
+ * - /api/auth : Authentification (inscription, connexion)
+ * - /api/cards : Gestion des cartes Pokémon
+ * - /api/decks : Gestion des decks (CRUD)
+ */
 app.use("/api/auth", authRouter);
 app.use("/api/cards", cardsRoutes);
 app.use("/api/decks", decksRoutes);

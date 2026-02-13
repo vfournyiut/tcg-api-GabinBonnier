@@ -1,0 +1,407 @@
+openapi: 3.0.3
+info:
+  title: TCG Pokémon API
+  description: |
+    API REST pour un jeu de cartes à collectionner (Trading Card Game) Pokémon.
+    
+    Cette API permet de :
+    - **S'authentifier** (inscription, connexion)
+    - **Consulter** toutes les cartes Pokémon disponibles
+    - **Gérer** ses decks de cartes (création, modification, suppression)
+    
+    ## Authentification
+    La plupart des endpoints nécessitent une authentification via JWT Bearer Token.
+    1. Créez un compte avec `/api/auth/sign-up` ou connectez-vous avec `/api/auth/sign-in`
+    2. Copiez le token JWT reçu dans la réponse
+    3. Cliquez sur le bouton "Authorize" 🔒 en haut à droite
+    4. Entrez le token dans le format : `Bearer <votre-token>`
+  version: 1.0.0
+  contact:
+    name: Support API
+    email: support@tcg-api.com
+
+servers:
+  - url: http://localhost:{port}/api
+    description: Serveur de développement local
+    variables:
+      port:
+        default: '3333'
+        description: Port du serveur
+
+tags:
+  - name: Health
+    description: Vérification de l'état du serveur
+  - name: Auth
+    description: Authentification et gestion des utilisateurs
+  - name: Cards
+    description: Consultation des cartes Pokémon
+  - name: Decks
+    description: Gestion des decks de cartes
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Entrez le token JWT obtenu lors de l'inscription ou de la connexion.
+        Format : Bearer <token>
+        
+        Exemple : Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+  schemas:
+    # Schéma User
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identifiant unique de l'utilisateur
+          example: 1
+        username:
+          type: string
+          description: Nom d'utilisateur
+          example: "PikachuMaster"
+        email:
+          type: string
+          format: email
+          description: Adresse email de l'utilisateur
+          example: "pikachu@pokemon.com"
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création du compte
+        updatedAt:
+          type: string
+          format: date-time
+          description: Date de dernière modification
+      required:
+        - id
+        - username
+        - email
+
+    # Schéma Card
+    Card:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identifiant unique de la carte
+          example: 1
+        name:
+          type: string
+          description: Nom du Pokémon
+          example: "Pikachu"
+        hp:
+          type: integer
+          description: Points de vie du Pokémon
+          example: 60
+          minimum: 1
+        attack:
+          type: integer
+          description: Points d'attaque du Pokémon
+          example: 55
+          minimum: 1
+        type:
+          type: string
+          enum: [Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic, Bug, Rock, Ghost, Dragon, Dark, Steel, Fairy]
+          description: Type élémentaire du Pokémon
+          example: "Electric"
+        pokedexNumber:
+          type: integer
+          description: Numéro du Pokédex National
+          example: 25
+        imgUrl:
+          type: string
+          nullable: true
+          description: URL de l'image de la carte
+          example: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+        createdAt:
+          type: string
+          format: date-time
+          description: Date d'ajout de la carte en base
+        updatedAt:
+          type: string
+          format: date-time
+          description: Date de dernière modification
+      required:
+        - id
+        - name
+        - hp
+        - attack
+        - type
+        - pokedexNumber
+
+    # Schéma DeckCard (relation entre Deck et Card)
+    DeckCard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identifiant de la relation
+          example: 1
+        deckId:
+          type: integer
+          description: ID du deck
+          example: 1
+        cardId:
+          type: integer
+          description: ID de la carte
+          example: 25
+        card:
+          $ref: '#/components/schemas/Card'
+      required:
+        - id
+        - deckId
+        - cardId
+
+    # Schéma Deck
+    Deck:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Identifiant unique du deck
+          example: 1
+        name:
+          type: string
+          description: Nom du deck
+          example: "Mon deck Électrique"
+        userId:
+          type: integer
+          description: ID de l'utilisateur propriétaire
+          example: 1
+        cards:
+          type: array
+          description: Liste des cartes dans le deck (exactement 10)
+          items:
+            $ref: '#/components/schemas/DeckCard'
+          minItems: 10
+          maxItems: 10
+        createdAt:
+          type: string
+          format: date-time
+          description: Date de création du deck
+        updatedAt:
+          type: string
+          format: date-time
+          description: Date de dernière modification
+      required:
+        - id
+        - name
+        - userId
+        - cards
+
+    # Schémas d'erreur
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Message d'erreur
+          example: "Une erreur est survenue"
+      required:
+        - error
+
+    ValidationError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Message d'erreur de validation
+          example: "Données manquantes"
+      required:
+        - error
+
+    UnauthorizedError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Message d'erreur d'authentification
+          example: "Token invalide ou expiré"
+      required:
+        - error
+
+    ForbiddenError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Message d'erreur d'autorisation
+          example: "Accès non autorisé à cette ressource"
+      required:
+        - error
+
+    NotFoundError:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Message d'erreur de ressource introuvable
+          example: "Ressource non trouvée"
+      required:
+        - error
+
+    # Schémas de requête/réponse spécifiques
+    SignUpRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Adresse email (doit être unique)
+          example: "pikachu@pokemon.com"
+        username:
+          type: string
+          description: Nom d'utilisateur (doit être unique)
+          example: "PikachuMaster"
+        password:
+          type: string
+          format: password
+          description: Mot de passe (sera hashé en base)
+          minLength: 6
+          example: "securePassword123"
+      required:
+        - email
+        - username
+        - password
+
+    SignInRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Adresse email
+          example: "pikachu@pokemon.com"
+        password:
+          type: string
+          format: password
+          description: Mot de passe
+          example: "securePassword123"
+      required:
+        - email
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: Token JWT pour l'authentification des futures requêtes
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoicGlrYWNodUBwb2tlbW9uLmNvbSIsImlhdCI6MTY0MDk5NTIwMCwiZXhwIjoxNjQxNjAwMDAwfQ.example"
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            username:
+              type: string
+              example: "PikachuMaster"
+            email:
+              type: string
+              example: "pikachu@pokemon.com"
+      required:
+        - token
+        - user
+
+    CreateDeckRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nom du deck
+          example: "Mon deck Électrique"
+        cards:
+          type: array
+          description: Tableau de 10 IDs de cartes
+          items:
+            type: integer
+          minItems: 10
+          maxItems: 10
+          example: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      required:
+        - name
+        - cards
+
+    UpdateDeckRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Nouveau nom du deck (optionnel)
+          example: "Mon super deck Électrique"
+        cards:
+          type: array
+          description: Nouveau tableau de 10 IDs de cartes (optionnel)
+          items:
+            type: integer
+          minItems: 10
+          maxItems: 10
+          example: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+        message:
+          type: string
+          example: "TCG Backend Server is running"
+
+    DeleteResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Deck supprimé avec succès"
+
+  responses:
+    UnauthorizedError:
+      description: Non authentifié - Token manquant, invalide ou expiré
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UnauthorizedError'
+          examples:
+            missingToken:
+              value:
+                error: "Token manquant"
+            invalidToken:
+              value:
+                error: "Token invalide ou expiré"
+
+    ForbiddenError:
+      description: Interdit - Accès non autorisé à cette ressource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ForbiddenError'
+          examples:
+            forbidden:
+              value:
+                error: "Accès non autorisé à cette ressource"
+
+    NotFoundError:
+      description: Ressource non trouvée
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotFoundError'
+
+    ServerError:
+      description: Erreur serveur interne
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            serverError:
+              value:
+                error: "Erreur serveur"
+
+paths: {}

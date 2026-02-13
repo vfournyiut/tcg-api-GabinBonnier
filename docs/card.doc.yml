@@ -1,0 +1,65 @@
+paths:
+  /cards:
+    get:
+      tags:
+        - Cards
+      summary: Récupérer toutes les cartes Pokémon
+      description: |
+        Retourne la liste complète de toutes les cartes Pokémon disponibles dans le jeu.
+        
+        **Caractéristiques :**
+        - Pas d'authentification requise (endpoint public)
+        - Cartes triées par numéro de Pokédex (ordre croissant)
+        - Inclut toutes les informations : nom, HP, attaque, type, image, etc.
+        
+        **Utilisation typique :**
+        Cet endpoint est utilisé pour :
+        - Afficher le catalogue de cartes disponibles
+        - Permettre aux utilisateurs de choisir des cartes pour leur deck
+        - Consulter les statistiques des Pokémon
+      operationId: getAllCards
+      responses:
+        '200':
+          description: Liste de toutes les cartes récupérée avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+              examples:
+                multipleCards:
+                  summary: Exemple avec plusieurs cartes
+                  value:
+                    - id: 1
+                      name: "Bulbasaur"
+                      hp: 45
+                      attack: 49
+                      type: "Grass"
+                      pokedexNumber: 1
+                      imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/1.png"
+                      createdAt: "2026-01-22T23:13:13.000Z"
+                      updatedAt: "2026-01-22T23:13:13.000Z"
+                    - id: 2
+                      name: "Ivysaur"
+                      hp: 60
+                      attack: 62
+                      type: "Grass"
+                      pokedexNumber: 2
+                      imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/2.png"
+                      createdAt: "2026-01-22T23:13:13.000Z"
+                      updatedAt: "2026-01-22T23:13:13.000Z"
+                    - id: 25
+                      name: "Pikachu"
+                      hp: 35
+                      attack: 55
+                      type: "Electric"
+                      pokedexNumber: 25
+                      imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+                      createdAt: "2026-01-22T23:13:13.000Z"
+                      updatedAt: "2026-01-22T23:13:13.000Z"
+                emptyList:
+                  summary: Base de données vide
+                  value: []
+        '500':
+          $ref: '#/components/responses/ServerError'

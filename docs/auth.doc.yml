@@ -1,0 +1,159 @@
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Vérifier l'état du serveur
+      description: Endpoint de health check pour vérifier que le serveur est opérationnel
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Le serveur fonctionne correctement
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "ok"
+                message: "TCG Backend Server is running"
+
+  /auth/sign-up:
+    post:
+      tags:
+        - Auth
+      summary: Créer un nouveau compte utilisateur
+      description: |
+        Permet à un nouvel utilisateur de s'inscrire sur la plateforme.
+        
+        **Validations :**
+        - L'email doit être unique
+        - Le nom d'utilisateur doit être unique
+        - Le mot de passe sera hashé avant stockage (bcrypt)
+        
+        **Retour :**
+        Un token JWT valable 7 jours pour authentifier les futures requêtes.
+      operationId: signUp
+      requestBody:
+        required: true
+        description: Informations d'inscription
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+            examples:
+              exemple1:
+                summary: Nouvel utilisateur standard
+                value:
+                  email: "dresseur@pokemon.com"
+                  username: "DresseurPokemon"
+                  password: "motdepasse123"
+              exemple2:
+                summary: Utilisateur fan de Pikachu
+                value:
+                  email: "pikachu.fan@gmail.com"
+                  username: "PikachuLover"
+                  password: "ilovePikachu25"
+      responses:
+        '201':
+          description: Compte créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiZHJlc3NldXJAcG9rZW1vbi5jb20iLCJpYXQiOjE2NDA5OTUyMDAsImV4cCI6MTY0MTYwMDAwMH0.example"
+                user:
+                  id: 1
+                  username: "DresseurPokemon"
+                  email: "dresseur@pokemon.com"
+        '400':
+          description: Données manquantes ou invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                missingData:
+                  summary: Champs manquants
+                  value:
+                    error: "Données manquantes"
+        '409':
+          description: Conflit - Email déjà utilisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Email déjà utilisé"
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /auth/sign-in:
+    post:
+      tags:
+        - Auth
+      summary: Se connecter à un compte existant
+      description: |
+        Permet à un utilisateur existant de se connecter.
+        
+        **Validations :**
+        - L'email doit exister en base
+        - Le mot de passe doit correspondre (comparaison avec bcrypt)
+        
+        **Retour :**
+        Un token JWT valable 7 jours pour authentifier les futures requêtes.
+      operationId: signIn
+      requestBody:
+        required: true
+        description: Identifiants de connexion
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignInRequest'
+            examples:
+              exemple1:
+                summary: Connexion standard
+                value:
+                  email: "dresseur@pokemon.com"
+                  password: "motdepasse123"
+              exemple2:
+                summary: Connexion utilisateur existant
+                value:
+                  email: "blue@pokemon.com"
+                  password: "blue123"
+              exemple3:
+                summary: Connexion autre utilisateur
+                value:
+                  email: "red@pokemon.com"
+                  password: "red123"
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+              example:
+                token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiZHJlc3NldXJAcG9rZW1vbi5jb20iLCJpYXQiOjE2NDA5OTUyMDAsImV4cCI6MTY0MTYwMDAwMH0.example"
+                user:
+                  id: 1
+                  username: "DresseurPokemon"
+                  email: "dresseur@pokemon.com"
+        '400':
+          description: Données manquantes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              example:
+                error: "Données manquantes"
+        '401':
+          description: Email ou mot de passe incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnauthorizedError'
+              example:
+                error: "Email ou mot de passe incorrect"
+        '500':
+          $ref: '#/components/responses/ServerError'

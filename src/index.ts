@@ -12,10 +12,12 @@ import {env} from "./env";
 import express from "express";
 import cors from "cors";
 import swaggerUi from 'swagger-ui-express';
+import { Server as SocketIOServer } from 'socket.io';
 import { authRouter } from "./auth/auth.routes";
 import cardsRoutes from './api/cards/cards.routes';
 import decksRoutes from './api/decks/decks.routes';
 import { aggregateSwaggerDocs } from './swagger';
+import { authenticateSocket, AuthenticatedSocket } from './auth/socket.middleware';
 
 /**
  * Instance de l'application Express
@@ -85,6 +87,33 @@ app.use("/api/decks", decksRoutes);
 if (require.main === module) {
     // Create HTTP server
     const httpServer = createServer(app);
+
+    // Configure Socket.io with authentication
+    const io = new SocketIOServer(httpServer, {
+        cors: {
+            origin: true,
+            credentials: true,
+        },
+    });
+
+    // Apply authentication middleware to all connections
+    io.use(authenticateSocket);
+
+    // Handle authenticated connections
+    io.on('connection', (socket: AuthenticatedSocket) => {
+        console.log(`✅ User connected: ${socket.email} (ID: ${socket.userId})`);
+
+        // Example: Send welcome message with user info
+        socket.emit('authenticated', {
+            userId: socket.userId,
+            email: socket.email,
+            message: 'Successfully authenticated'
+        });
+
+        socket.on('disconnect', () => {
+            console.log(`❌ User disconnected: ${socket.email}`);
+        });
+    });
 
     // Start server
     try {

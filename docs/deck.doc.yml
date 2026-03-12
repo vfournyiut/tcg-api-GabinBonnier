@@ -1,0 +1,419 @@
+paths:
+  /decks:
+    post:
+      tags:
+        - Decks
+      summary: Créer un nouveau deck
+      description: |
+        Crée un nouveau deck de cartes pour l'utilisateur authentifié.
+        
+        **Règles de validation :**
+        - Le nom du deck est obligatoire
+        - Le tableau de cartes doit contenir **exactement 10 cartes**
+        - Toutes les cartes doivent exister en base de données
+        - Les IDs de cartes doivent être valides
+        
+        **Authentification requise** 🔒
+      operationId: createDeck
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        description: Informations du nouveau deck
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeckRequest'
+            examples:
+              deckElectrique:
+                summary: Deck Électrique
+                value:
+                  name: "Mon deck Électrique"
+                  cards: [25, 26, 81, 82, 100, 101, 125, 135, 145, 172]
+              deckFeu:
+                summary: Deck Feu
+                value:
+                  name: "Deck de feu"
+                  cards: [4, 5, 6, 37, 38, 58, 59, 77, 78, 126]
+              deckEau:
+                summary: Deck Eau
+                value:
+                  name: "Vague déferlante"
+                  cards: [7, 8, 9, 54, 55, 60, 61, 62, 79, 80]
+      responses:
+        '201':
+          description: Deck créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+              example:
+                id: 1
+                name: "Mon deck Électrique"
+                userId: 1
+                cards:
+                  - id: 1
+                    deckId: 1
+                    cardId: 25
+                    card:
+                      id: 25
+                      name: "Pikachu"
+                      hp: 35
+                      attack: 55
+                      type: "Electric"
+                      pokedexNumber: 25
+                      imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+                      createdAt: "2026-01-22T23:13:13.000Z"
+                      updatedAt: "2026-01-22T23:13:13.000Z"
+                  - id: 2
+                    deckId: 1
+                    cardId: 26
+                    card:
+                      id: 26
+                      name: "Raichu"
+                      hp: 60
+                      attack: 90
+                      type: "Electric"
+                      pokedexNumber: 26
+                      imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/26.png"
+                      createdAt: "2026-01-22T23:13:13.000Z"
+                      updatedAt: "2026-01-22T23:13:13.000Z"
+                createdAt: "2026-02-13T10:00:00.000Z"
+                updatedAt: "2026-02-13T10:00:00.000Z"
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                missingName:
+                  summary: Nom manquant
+                  value:
+                    error: "Le nom du deck est requis"
+                notArray:
+                  summary: Cartes pas un tableau
+                  value:
+                    error: "Les cartes doivent être un tableau"
+                wrongCount:
+                  summary: Pas 10 cartes
+                  value:
+                    error: "Un deck doit contenir exactement 10 cartes"
+                invalidCards:
+                  summary: Cartes invalides
+                  value:
+                    error: "Une ou plusieurs cartes sont invalides"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /decks/mine:
+    get:
+      tags:
+        - Decks
+      summary: Récupérer mes decks
+      description: |
+        Retourne tous les decks appartenant à l'utilisateur authentifié.
+        
+        **Caractéristiques :**
+        - Tri par date de création (plus récents en premier)
+        - Inclut toutes les cartes de chaque deck
+        - Seuls les decks de l'utilisateur connecté sont retournés
+        
+        **Authentification requise** 🔒
+      operationId: getMyDecks
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des decks récupérée avec succès
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deck'
+              examples:
+                multipleDecks:
+                  summary: Utilisateur avec 2 decks
+                  value:
+                    - id: 2
+                      name: "Deck Feu"
+                      userId: 1
+                      cards:
+                        - id: 11
+                          deckId: 2
+                          cardId: 4
+                          card:
+                            id: 4
+                            name: "Charmander"
+                            hp: 39
+                            attack: 52
+                            type: "Fire"
+                            pokedexNumber: 4
+                            imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/4.png"
+                      createdAt: "2026-02-13T11:00:00.000Z"
+                      updatedAt: "2026-02-13T11:00:00.000Z"
+                    - id: 1
+                      name: "Mon deck Électrique"
+                      userId: 1
+                      cards:
+                        - id: 1
+                          deckId: 1
+                          cardId: 25
+                          card:
+                            id: 25
+                            name: "Pikachu"
+                            hp: 35
+                            attack: 55
+                            type: "Electric"
+                            pokedexNumber: 25
+                            imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+                      createdAt: "2026-02-13T10:00:00.000Z"
+                      updatedAt: "2026-02-13T10:00:00.000Z"
+                emptyList:
+                  summary: Utilisateur sans deck
+                  value: []
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /decks/{id}:
+    get:
+      tags:
+        - Decks
+      summary: Récupérer un deck par son ID
+      description: |
+        Retourne les détails complets d'un deck spécifique.
+        
+        **Règles de sécurité :**
+        - L'utilisateur ne peut accéder qu'à ses propres decks
+        - Erreur 403 si tentative d'accès au deck d'un autre utilisateur
+        
+        **Authentification requise** 🔒
+      operationId: getDeckById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID du deck à récupérer
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Deck trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+              example:
+                id: 1
+                name: "Mon deck Électrique"
+                userId: 1
+                cards:
+                  - id: 1
+                    deckId: 1
+                    cardId: 25
+                    card:
+                      id: 25
+                      name: "Pikachu"
+                      hp: 35
+                      attack: 55
+                      type: "Electric"
+                      pokedexNumber: 25
+                      imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+                      createdAt: "2026-01-22T23:13:13.000Z"
+                      updatedAt: "2026-01-22T23:13:13.000Z"
+                createdAt: "2026-02-13T10:00:00.000Z"
+                updatedAt: "2026-02-13T10:00:00.000Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Accès interdit - Le deck n'appartient pas à cet utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+              example:
+                error: "Accès non autorisé à ce deck"
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+              example:
+                error: "Deck non trouvé"
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    patch:
+      tags:
+        - Decks
+      summary: Modifier un deck existant
+      description: |
+        Modifie le nom et/ou les cartes d'un deck existant.
+        
+        **Règles :**
+        - Au moins un champ (name ou cards) doit être fourni
+        - Si les cartes sont modifiées, il faut exactement 10 cartes
+        - Toutes les cartes doivent exister en base
+        - L'utilisateur ne peut modifier que ses propres decks
+        
+        **Authentification requise** 🔒
+      operationId: updateDeck
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID du deck à modifier
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        description: Nouvelles données du deck (nom et/ou cartes)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeckRequest'
+            examples:
+              updateName:
+                summary: Modifier uniquement le nom
+                value:
+                  name: "Mon super deck Électrique v2"
+              updateCards:
+                summary: Modifier uniquement les cartes
+                value:
+                  cards: [25, 26, 81, 82, 100, 101, 125, 135, 145, 172]
+              updateBoth:
+                summary: Modifier nom et cartes
+                value:
+                  name: "Deck Électrique Ultime"
+                  cards: [25, 26, 81, 82, 100, 101, 125, 135, 145, 172]
+      responses:
+        '200':
+          description: Deck modifié avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deck'
+              example:
+                id: 1
+                name: "Mon super deck Électrique v2"
+                userId: 1
+                cards:
+                  - id: 1
+                    deckId: 1
+                    cardId: 25
+                    card:
+                      id: 25
+                      name: "Pikachu"
+                      hp: 35
+                      attack: 55
+                      type: "Electric"
+                      pokedexNumber: 25
+                      imgUrl: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+                createdAt: "2026-02-13T10:00:00.000Z"
+                updatedAt: "2026-02-13T12:00:00.000Z"
+        '400':
+          description: Données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+              examples:
+                notArray:
+                  summary: Cartes pas un tableau
+                  value:
+                    error: "Les cartes doivent être un tableau"
+                wrongCount:
+                  summary: Pas 10 cartes
+                  value:
+                    error: "Un deck doit contenir exactement 10 cartes"
+                invalidCards:
+                  summary: Cartes invalides
+                  value:
+                    error: "Une ou plusieurs cartes sont invalides"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Accès interdit - Le deck n'appartient pas à cet utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+              example:
+                error: "Accès non autorisé à ce deck"
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+              example:
+                error: "Deck non trouvé"
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+    delete:
+      tags:
+        - Decks
+      summary: Supprimer un deck
+      description: |
+        Supprime définitivement un deck et toutes ses cartes associées.
+        
+        **Attention :** Cette action est irréversible !
+        
+        **Règles de sécurité :**
+        - L'utilisateur ne peut supprimer que ses propres decks
+        - Les DeckCards (relations) sont automatiquement supprimées
+        
+        **Authentification requise** 🔒
+      operationId: deleteDeck
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID du deck à supprimer
+          schema:
+            type: integer
+            example: 1
+      responses:
+        '200':
+          description: Deck supprimé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteResponse'
+              example:
+                message: "Deck supprimé avec succès"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Accès interdit - Le deck n'appartient pas à cet utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForbiddenError'
+              example:
+                error: "Accès non autorisé à ce deck"
+        '404':
+          description: Deck non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotFoundError'
+              example:
+                error: "Deck non trouvé"
+        '500':
+          $ref: '#/components/responses/ServerError'

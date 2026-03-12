@@ -11,9 +11,11 @@ import {createServer} from "http";
 import {env} from "./env";
 import express from "express";
 import cors from "cors";
+import swaggerUi from 'swagger-ui-express';
 import { authRouter } from "./auth/auth.routes";
 import cardsRoutes from './api/cards/cards.routes';
 import decksRoutes from './api/decks/decks.routes';
+import { aggregateSwaggerDocs } from './swagger';
 
 /**
  * Instance de l'application Express
@@ -38,6 +40,26 @@ app.use(express.json());
 
 // Serve static files (Socket.io test client)
 app.use(express.static('public'));
+
+/**
+ * Configuration de Swagger UI pour la documentation de l'API
+ * 
+ * Accessible sur /api-docs
+ * - Fusionne automatiquement toutes les documentations des modules
+ * - Interface interactive pour tester les endpoints
+ * - Support de l'authentification Bearer JWT
+ */
+const swaggerSpec = aggregateSwaggerDocs();
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customSiteTitle: 'TCG Pokémon API Documentation',
+    customCss: '.swagger-ui .topbar { display: none }',
+    swaggerOptions: {
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        filter: true,
+        tryItOutEnabled: true,
+    }
+}));
 
 /**
  * Route de vérification de santé du serveur
@@ -68,6 +90,7 @@ if (require.main === module) {
     try {
         httpServer.listen(env.PORT, () => {
             console.log(`\n🚀 Server is running on http://localhost:${env.PORT}`);
+            console.log(`📚 API Documentation available at http://localhost:${env.PORT}/api-docs`);
             console.log(`🧪 Socket.io Test Client available at http://localhost:${env.PORT}`);
         });
     } catch (error) {
